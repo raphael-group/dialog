@@ -1,0 +1,12 @@
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = ["D203", "D213", "FIX002"]
+
+[tool.ruff.lint.per-file-ignores]
+"setup.py" = ["D100"]
+
+[lint.pydocstyle]
+convention = "google"
