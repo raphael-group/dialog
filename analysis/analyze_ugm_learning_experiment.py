@@ -18,12 +18,14 @@ def fit_binarized_count_data_ising_model(
     lambda_val: float = 0.01,
 ) -> tuple:
     """TODO: Add docstring."""
-    n_samples, p = x_data.shape
+    x_data_transformed = 2 * x_data - 1
+
+    n_samples, p = x_data_transformed.shape
     intercepts = np.zeros(p)
     coefs = np.zeros((p, p))
-    for i in range(p):
-        y = x_data[:, i]
-        x_other = np.delete(x_data, i, axis=1)
+    for i, _ in enumerate(genes):
+        y = (x_data_transformed[:, i] == 1).astype(int)
+        x_other = np.delete(x_data_transformed, i, axis=1)
         model = LogisticRegression(
             penalty="l1",
             C=1.0 / lambda_val,
@@ -53,32 +55,31 @@ def fit_binarized_count_data_ising_model(
 def fit_bmr_aware_binarized_count_data_ising_model(
     x_data: np.ndarray,
     genes: list,
-    expected_background_mutations: dict,
-    lambda_val: float = 0.01,
+    gene_to_bkgd_factor: dict,
+    gene_to_somatic_factor: dict,
+    lambda_val: float = 0.1,
 ) -> tuple:
     """TODO: Add docstring."""
-    n_samples, p = x_data.shape
-    total_observed_muts = x_data.sum()
-
-    def _compute_bg_fraction(g: str) -> float:
-        raw_bg = expected_background_mutations[g] / max(total_observed_muts, 1e-12)
-        return max(min(raw_bg, 1.0 - 1e-6), 1e-6)
-
-    bg_offsets = []
-    for g in genes:
-        b_g = _compute_bg_fraction(g)
-        rho_g = 0.5 * np.log(b_g / (1.0 - b_g))
-        bg_offsets.append(rho_g)
+    x_data_transformed = 2 * x_data - 1
+    n_samples, p = x_data_transformed.shape
 
     intercepts = np.zeros(p)
     coefs = np.zeros((p, p))
+    offset_coefs_bkgd = np.zeros(p)
+    offset_coefs_somatic = np.zeros(p)
 
-    for i in range(p):
-        y = (x_data[:, i] > 0).astype(int)
-        x_other = np.delete(x_data, i, axis=1)
-        offset_col = np.full((n_samples, 1), bg_offsets[i])
+    for i, gene in enumerate(genes):
+        y = (x_data_transformed[:, i] == 1).astype(int)
+        x_other = np.delete(x_data_transformed, i, axis=1)
 
-        x_design = np.hstack([x_other, offset_col])
+        val_bkgd = gene_to_bkgd_factor[gene]
+        val_somatic = gene_to_somatic_factor[gene]
+
+        bkgd_col = np.full((n_samples, 1), val_bkgd)
+        somatic_col = np.full((n_samples, 1), val_somatic)
+
+        x_design = np.hstack([x_other, bkgd_col, somatic_col])
+
         model = LogisticRegression(
             penalty="l1",
             C=1.0 / lambda_val,
@@ -87,6 +88,7 @@ def fit_bmr_aware_binarized_count_data_ising_model(
             max_iter=2000,
         )
         model.fit(x_design, y)
+
         intercepts[i] = model.intercept_[0]
         coef_i = model.coef_[0]
 
@@ -97,9 +99,19 @@ def fit_bmr_aware_binarized_count_data_ising_model(
             coefs[i, j] = coef_i[idx]
             idx += 1
 
+        offset_coefs_bkgd[i] = coef_i[idx]
+        idx += 1
+        offset_coefs_somatic[i] = coef_i[idx]
+
     theta = {}
-    for i, g in enumerate(genes):
-        theta[g] = intercepts[i]
+    for i, gene in enumerate(genes):
+        val_bkgd = gene_to_bkgd_factor[gene]
+        val_somatic = gene_to_somatic_factor[gene]
+        theta[gene] = (
+            intercepts[i]
+            + offset_coefs_bkgd[i] * val_bkgd
+            + offset_coefs_somatic[i] * val_somatic
+        )
 
     beta = {}
     for i in range(p):
@@ -123,11 +135,16 @@ def _build_argument_parser() -> ArgumentParser:
     return parser
 
 
-def _calculate_expected_background_mutations(
-    num_samples: int,
+def _calculate_expected_per_sample_background_mutations(
     bmr_pmf_vals: list,
 ) -> float:
-    return num_samples * np.sum([x * prob_x for x, prob_x in enumerate(bmr_pmf_vals)])
+    return np.sum([x * prob_x for x, prob_x in enumerate(bmr_pmf_vals)])
+
+
+def _calculate_prob_nonzero_background_mutations(
+    bmr_pmf_vals: list,
+) -> float:
+    return 1 - bmr_pmf_vals[0]
 
 
 def run_sparse_logistic_regression_ising_model(
@@ -166,14 +183,16 @@ def run_sparse_logistic_regression_ising_model(
 def run_bmr_aware_binarized_count_data_ising_model(
     x_data: np.ndarray,
     genes: list,
-    expected_background_mutations: dict,
+    gene_to_exp_sample_bkgd_mutations: dict,
+    gene_to_somatic_factor: dict,
     out_dir: Path,
 ) -> None:
     """TODO: Add docstring."""
     theta, beta = fit_bmr_aware_binarized_count_data_ising_model(
         x_data,
         genes,
-        expected_background_mutations,
+        gene_to_exp_sample_bkgd_mutations,
+        gene_to_somatic_factor,
     )
     sorted_theta_values = sorted(theta.items(), key=lambda x: x[1], reverse=True)
     sorted_beta_values = sorted(beta.items(), key=lambda x: x[1], reverse=True)
@@ -210,12 +229,14 @@ def main() -> None:
         k: [val for val in pmf_vals if not np.isnan(val)]
         for k, pmf_vals in gene_to_bmr_pmf_raw.items()
     }
-    expected_background_mutations = {
-        gene: _calculate_expected_background_mutations(
-            cnt_mtx_df.shape[0],
+    gene_to_exp_sample_bkgd_mutations = {
+        gene: _calculate_expected_per_sample_background_mutations(
             bmr_pmf_vals,
         )
         for gene, bmr_pmf_vals in gene_to_bmr_pmf.items()
+    }
+    gene_to_exp_sample_somatic_mutations = {
+        gene: sub_cnt_mtx_df[gene].mean() for gene in genes
     }
 
     run_sparse_logistic_regression_ising_model(
@@ -227,7 +248,8 @@ def main() -> None:
     run_bmr_aware_binarized_count_data_ising_model(
         sub_cnt_mtx_df.to_numpy(),
         genes,
-        expected_background_mutations,
+        gene_to_exp_sample_bkgd_mutations,
+        gene_to_exp_sample_somatic_mutations,
         args.out_dir,
     )
 
