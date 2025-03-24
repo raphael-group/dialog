@@ -9,10 +9,10 @@ def update_theta_and_beta_parameters(
     thetas: np.ndarray,
     betas: np.ndarray,
     persistent_chain: np.ndarray,
-    alpha: float = 1.0,
-    lambda_theta: float = 0.1,
-    lambda_beta: float = 0.1,
-    momentum: float = 0.9,
+    alpha: float,
+    lambda_theta: float,
+    lambda_beta: float,
+    momentum: float,
 ) -> tuple:
     """TODO: Add docstring."""
     num_samples = latent_driver_map.shape[0]
