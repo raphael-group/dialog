@@ -9,7 +9,7 @@ def update_theta_and_beta_parameters(
     thetas: np.ndarray,
     betas: np.ndarray,
     persistent_chain: np.ndarray,
-    alpha: float,
+    learning_rate: float,
     lambda_theta: float,
     lambda_beta: float,
     momentum: float,
@@ -29,13 +29,13 @@ def update_theta_and_beta_parameters(
     model_corr = new_persistent_chain.T @ new_persistent_chain / num_samples
     beta_grad = empirical_corr - model_corr
 
-    new_thetas = thetas + alpha * theta_grad
-    new_betas = betas + alpha * beta_grad
+    new_thetas = thetas + learning_rate * theta_grad
+    new_betas = betas + learning_rate * beta_grad
 
     def _soft_threshold(x: np.array, thresh: float) -> np.array:
         return np.sign(x) * np.maximum(np.abs(x) - thresh, 0)
 
-    new_thetas = _soft_threshold(new_thetas, alpha * lambda_theta)
-    new_betas = _soft_threshold(new_betas, alpha * lambda_beta)
+    new_thetas = _soft_threshold(new_thetas, learning_rate * lambda_theta)
+    new_betas = _soft_threshold(new_betas, learning_rate * lambda_beta)
 
     return new_thetas, new_betas, new_persistent_chain
