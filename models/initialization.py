@@ -17,6 +17,15 @@ EPSILON = 1e-8
 # ------------------------------------------------------------------------------------ #
 #                                       FUNCTIONS                                      #
 # ------------------------------------------------------------------------------------ #
+def initialize_latent_drivers(
+    rng: np.random.Generator,
+    num_samples: int,
+    num_genes: int,
+) -> np.ndarray:
+    """Randomly initilize binary latent driver indicators for each sample/gene."""
+    return rng.integers(0, 2, (num_samples, num_genes))
+
+
 def initialize_thetas(
     cnt_mtx_df: pd.DataFrame,
     bmr_pmfs: GeneBackgroundPMFs,
