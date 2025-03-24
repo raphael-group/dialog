@@ -9,6 +9,7 @@ ignore = ["D203", "D213", "FIX002", "TD003"]
 "setup.py" = ["D100"]
 "models/inference.py" = ["PLR0913"]
 "models/learning.py" = ["PLR0913"]
+"models/method.py" = ["PLR0913"]
 
 [lint.pydocstyle]
 convention = "google"
