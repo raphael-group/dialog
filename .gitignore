@@ -25,5 +25,6 @@ dist/
 
 # Data, Methods, & Output
 data/
+slurm/
 output/
 figures/
