@@ -3,6 +3,38 @@
 import numpy as np
 
 
+def compute_negative_energy(
+    x: np.ndarray,
+    thetas: np.ndarray,
+    betas: np.ndarray,
+) -> np.ndarray:
+    """TODO: Add docstring."""
+    linear_term = x @ thetas
+    pairwise_term = np.einsum("ni,nj,ij->n", x, x, betas) * 0.5
+    return linear_term + pairwise_term
+
+
+def compute_objective(
+    data_latent_drivers: np.ndarray,
+    model_latent_drivers: np.ndarray,
+    thetas: np.ndarray,
+    betas: np.ndarray,
+    lambda_theta: float,
+    lambda_beta: float,
+) -> float:
+    """TODO: Add docstring."""
+    data_mean_energy = np.mean(
+        compute_negative_energy(data_latent_drivers, thetas, betas),
+    )
+    model_mean_energy = np.mean(
+        compute_negative_energy(model_latent_drivers, thetas, betas),
+    )
+    penalty = lambda_theta * np.sum(np.abs(thetas)) + lambda_beta * np.sum(
+        np.abs(betas),
+    )
+    return data_mean_energy - model_mean_energy - penalty
+
+
 def update_theta_and_beta_parameters(
     latent_driver_map: np.ndarray,
     latent_driver_samples: list,

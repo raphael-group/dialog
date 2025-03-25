@@ -10,7 +10,7 @@ from models.initialization import (
     initialize_latent_drivers,
     initialize_thetas,
 )
-from models.learning import update_theta_and_beta_parameters
+from models.learning import compute_objective, update_theta_and_beta_parameters
 from models.structures import GeneBackgroundPMFs
 
 
@@ -32,6 +32,7 @@ def run_dialog_method(
     betas = initialize_betas(cnt_mtx_df)
     latent_drivers = initialize_latent_drivers(rng, num_samples, num_genes)
     persistent_chain = latent_drivers.copy()
+    objective = np.inf
 
     dout = (
         out_dir / f"ITER{num_iter}_S{num_gibbs_samples}_LR{learning_rate}"
@@ -46,8 +47,8 @@ def run_dialog_method(
             {
                 "thetas": thetas,
                 "betas": betas,
-                "persistent_chain": persistent_chain,
                 "gene_names": cnt_mtx_df.columns.to_numpy(),
+                "objective": objective,
             },
         )
         latent_drivers = iterated_conditional_modes(
@@ -76,4 +77,12 @@ def run_dialog_method(
             lambda_theta=lambda_theta,
             lambda_beta=lambda_beta,
             momentum=momentum,
+        )
+        objective = compute_objective(
+            latent_drivers,
+            persistent_chain,
+            thetas,
+            betas,
+            lambda_theta,
+            lambda_beta,
         )
