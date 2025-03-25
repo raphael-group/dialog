@@ -35,7 +35,7 @@ def run_dialog_method(
 
     dout = (
         out_dir / f"ITER{num_iter}_S{num_gibbs_samples}_LR{learning_rate}"
-        f"LT{lambda_theta}_LB{lambda_beta}_M{momentum}"
+        f"_LT{lambda_theta}_LB{lambda_beta}_M{momentum}"
     )
     dout.mkdir(parents=True, exist_ok=True)
 
