@@ -8,7 +8,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.metrics import average_precision_score, precision_recall_curve
-from styling import set_plot_font_and_scale, set_plot_style
+
+from plotting.styling import set_plot_font_and_scale, set_plot_style
 
 
 def draw_dialog_objective_optimization_curve(
@@ -26,10 +27,12 @@ def draw_dialog_objective_optimization_curve(
         objective_values.append(training_history["objective"])
     set_plot_font_and_scale()
     set_plot_style()
+    plt.figure()
     plt.plot(objective_values)
     plt.xlabel("Iteration")
     plt.ylabel("Objective")
     plt.savefig(out_fn)
+    plt.close()
 
 
 def draw_dialog_parameter_convergence_curve(
@@ -53,12 +56,14 @@ def draw_dialog_parameter_convergence_curve(
         prev_theta, prev_beta = theta, beta
     set_plot_font_and_scale()
     set_plot_style()
+    plt.figure()
     plt.plot(theta_diffs, label="Theta")
     plt.plot(beta_diffs, label="Beta")
     plt.xlabel("Iteration")
     plt.ylabel("Parameter Difference")
     plt.legend()
     plt.savefig(out_fn)
+    plt.close()
 
 
 def draw_precision_recall_curve(
@@ -76,6 +81,7 @@ def draw_precision_recall_curve(
 
     set_plot_font_and_scale()
     set_plot_style()
+    plt.figure()
     for name, res_fn in zip(["Init", "Final"], [init_results_fn, results_fn]):
         results = np.load(res_fn, allow_pickle=True).item()
         genes = results["gene_names"]
@@ -99,3 +105,4 @@ def draw_precision_recall_curve(
     plt.title("Precision-Recall Curve")
     plt.legend()
     plt.savefig(out_fn)
+    plt.close()
