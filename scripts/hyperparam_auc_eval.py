@@ -42,6 +42,8 @@ def evaluate_and_find_best_auc_across_iterations(
     num_iter, num_samples, learning_rate, lambda_theta, lambda_beta, momentum = (
         hyperparameters
     )
+    min_obj_iter, min_obj_val = 0, float("inf")
+    min_obj_auc = 0
     max_auc_iter, max_auc_val = 0, 0
     for it in range(int(num_iter)):
         training_history_fn = results_dir / f"iter_{it}.npy"
@@ -63,6 +65,9 @@ def evaluate_and_find_best_auc_across_iterations(
         auc_val = average_precision_score(y_true, y_score)
         if auc_val > max_auc_val:
             max_auc_iter, max_auc_val = it, auc_val
+        if training_history["objective"] < min_obj_val:
+            min_obj_iter, min_obj_val = it, training_history["objective"]
+            min_obj_auc = auc_val
     out_dir.mkdir(parents=True, exist_ok=True)
     output_path = out_dir / f"{simulation_name}.csv"
     with output_path.open("w") as f:
@@ -74,7 +79,10 @@ def evaluate_and_find_best_auc_across_iterations(
             f"{lambda_beta},"
             f"{momentum},"
             f"{max_auc_iter},"
-            f"{max_auc_val:.5f}\n",
+            f"{max_auc_val:.5f},"
+            f"{min_obj_iter},"
+            f"{min_obj_val:.5f},"
+            f"{min_obj_auc:.5f},",
         )
 
 
