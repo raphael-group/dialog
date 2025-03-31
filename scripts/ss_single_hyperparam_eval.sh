@@ -3,8 +3,8 @@
 #SBATCH --time=01:00:00
 #SBATCH --mem=2G
 #SBATCH --cpus-per-task=4
-#SBATCH --output=scrap/%x_%j.out
-#SBATCH --error=scrap/%x_%j.err
+#SBATCH --output=output/slurm/%x_%j.out
+#SBATCH --error=output/slurm/%x_%j.err
 
 SIM_INFO=$1
 RESULTS_DIR=$2

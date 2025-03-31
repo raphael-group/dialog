@@ -82,7 +82,7 @@ def evaluate_and_find_best_auc_across_iterations(
             f"{max_auc_val:.5f},"
             f"{min_obj_iter},"
             f"{min_obj_val:.5f},"
-            f"{min_obj_auc:.5f},",
+            f"{min_obj_auc:.5f}\n",
         )
 
 
