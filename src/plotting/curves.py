@@ -96,10 +96,35 @@ def draw_precision_recall_curve(
             tuple(sorted(pair)) in true_ixns
             for pair in zip(betas["gene_a"], betas["gene_b"])
         ]
-        y_score = betas["beta"] if ixn_type == "CO" else -betas["beta"]
+        y_score = betas["beta"] if ixn_type == "ME" else -betas["beta"]
         auc_val = average_precision_score(y_true, y_score)
         precision, recall, _ = precision_recall_curve(y_true, y_score)
         plt.plot(recall, precision, label=f"{name} AUC: {auc_val:.3f}")
+
+    # read and plot naive inverse covariance matrix results
+    naive_results_fn = results_fn.parents[1] / "naive_precision_matrix.csv"
+    naive_results_df = pd.read_csv(naive_results_fn, index_col=0)
+    naive_results_arr = naive_results_df.to_numpy()
+    naive_results = pd.DataFrame(
+        [
+            {
+                "gene_a": naive_results_df.columns[g],
+                "gene_b": naive_results_df.columns[h],
+                "inv_cov": naive_results_arr[g, h],
+            }
+            for g, h in combinations(range(len(naive_results_df.columns)), 2)
+        ],
+    )
+    y_true = [
+        tuple(sorted(pair)) in true_ixns
+        for pair in zip(naive_results["gene_a"], naive_results["gene_b"])
+    ]
+    y_score = (
+        -naive_results["inv_cov"] if ixn_type == "ME" else naive_results["inv_cov"]
+    )
+    auc_val = average_precision_score(y_true, y_score)
+    precision, recall, _ = precision_recall_curve(y_true, y_score)
+    plt.plot(recall, precision, label=f"Naive AUC: {auc_val:.3f}")
 
     plt.xlabel("Recall")
     plt.ylabel("Precision")
@@ -143,6 +168,7 @@ def draw_recall_at_k_curve(
 
     init_results_fn = results_fn.with_name("iter_0.npy")
 
+
     set_plot_font_and_scale()
     set_plot_style()
     plt.figure()
@@ -158,11 +184,33 @@ def draw_recall_at_k_curve(
         )
         recalls_at_k = _get_recalls_at_k(
             true_ixns=true_ixns,
-            ranked_ixns=betas.sort_values(by="beta", ascending=ixn_type == "ME"),
+            ranked_ixns=betas.sort_values(by="beta", ascending=ixn_type != "ME"),
             num_positive=len(true_ixns),
             max_k=max_k,
         )
         plt.plot(range(1, max_k + 1), recalls_at_k, label=f"{name}")
+
+    # read and plot naive inverse covariance matrix results
+    naive_results_fn = results_fn.parents[1] / "naive_precision_matrix.csv"
+    naive_results_df = pd.read_csv(naive_results_fn, index_col=0)
+    naive_results_arr = naive_results_df.to_numpy()
+    naive_results = pd.DataFrame(
+        [
+            {
+                "gene_a": naive_results_df.columns[g],
+                "gene_b": naive_results_df.columns[h],
+                "inv_cov": naive_results_arr[g, h],
+            }
+            for g, h in combinations(range(len(naive_results_df.columns)), 2)
+        ],
+    )
+    recalls_at_k = _get_recalls_at_k(
+        true_ixns=true_ixns,
+        ranked_ixns=naive_results.sort_values(by="inv_cov", ascending=ixn_type == "ME"),
+        num_positive=len(true_ixns),
+        max_k=max_k,
+    )
+    plt.plot(range(1, max_k + 1), recalls_at_k, label="Naive")
 
     plt.ylim(0, 1)
     plt.xlabel("Top K Ranked Interactions")
