@@ -96,7 +96,7 @@ def draw_precision_recall_curve(
             tuple(sorted(pair)) in true_ixns
             for pair in zip(betas["gene_a"], betas["gene_b"])
         ]
-        y_score = betas["beta"]
+        y_score = betas["beta"] if ixn_type == "CO" else -betas["beta"]
         auc_val = average_precision_score(y_true, y_score)
         precision, recall, _ = precision_recall_curve(y_true, y_score)
         plt.plot(recall, precision, label=f"{name} AUC: {auc_val:.3f}")
@@ -158,7 +158,7 @@ def draw_recall_at_k_curve(
         )
         recalls_at_k = _get_recalls_at_k(
             true_ixns=true_ixns,
-            ranked_ixns=betas.sort_values(by="beta", ascending=False),
+            ranked_ixns=betas.sort_values(by="beta", ascending=ixn_type == "ME"),
             num_positive=len(true_ixns),
             max_k=max_k,
         )
