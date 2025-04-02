@@ -19,6 +19,7 @@ def _build_parser() -> ArgumentParser:
     parser.add_argument("--sim_info", type=Path, required=True)
     parser.add_argument("--results_dir", type=Path, required=True)
     parser.add_argument("--out_dir", type=Path, required=True)
+    parser.add_argument("--ixn_type", type=str, required=True, choices=["ME", "CO"])
     return parser
 
 def _read_simulation_info(simulation_info_fn: Path) -> dict:
@@ -32,9 +33,11 @@ def evaluate_and_find_best_auc_across_iterations(
     simulation_info: dict,
     results_dir: Path,
     out_dir: Path,
+    ixn_type: str,
 ) -> None:
     """TODO: Add docstring."""
-    true_ixns = {tuple(sorted(pair)) for pair in simulation_info.get("ME Pairs")}
+    key = f"{ixn_type} Pairs"
+    true_ixns = {tuple(sorted(pair)) for pair in simulation_info.get(key)}
     simulation_name = results_dir.name
     hyperparameters = [
         re.search(r"\d*\.?\d+", x).group() for x in simulation_name.split("_")
@@ -61,7 +64,7 @@ def evaluate_and_find_best_auc_across_iterations(
             tuple(sorted(pair)) in true_ixns
             for pair in zip(betas["gene_a"], betas["gene_b"])
         ]
-        y_score = -betas["beta"]
+        y_score = -betas["beta"] if ixn_type == "ME" else betas["beta"]
         auc_val = average_precision_score(y_true, y_score)
         if auc_val > max_auc_val:
             max_auc_iter, max_auc_val = it, auc_val
@@ -93,4 +96,5 @@ if __name__ == "__main__":
         _read_simulation_info(args.sim_info),
         args.results_dir,
         args.out_dir,
+        args.ixn_type,
     )
