@@ -12,7 +12,7 @@ from cycler import cycler
 # ------------------------------------------------------------------------------------ #
 #                                       CONSTANTS                                      #
 # ------------------------------------------------------------------------------------ #
-FONT_PATH = Path(__file__).parent / "fonts" / "cmuserif.ttf"
+FONT_PATH = Path(__file__).parent / "fonts" / "lato.ttf"
 FONT_SCALE = 1.5
 
 
