@@ -31,7 +31,7 @@ def draw_dialog_objective_optimization_curve(
     plt.plot(objective_values)
     plt.xlabel("Iteration")
     plt.ylabel("Objective")
-    plt.savefig(out_fn)
+    plt.savefig(out_fn, transparent=True)
     plt.close()
 
 
@@ -62,7 +62,7 @@ def draw_dialog_parameter_convergence_curve(
     plt.xlabel("Iteration")
     plt.ylabel("Parameter Difference")
     plt.legend()
-    plt.savefig(out_fn)
+    plt.savefig(out_fn, transparent=True)
     plt.close()
 
 
@@ -96,7 +96,7 @@ def draw_precision_recall_curve(
             tuple(sorted(pair)) in true_ixns
             for pair in zip(betas["gene_a"], betas["gene_b"])
         ]
-        y_score = betas["beta"] if ixn_type == "ME" else -betas["beta"]
+        y_score = betas["beta"] if ixn_type == "CO" else -betas["beta"]
         auc_val = average_precision_score(y_true, y_score)
         precision, recall, _ = precision_recall_curve(y_true, y_score)
         plt.plot(recall, precision, label=f"{name} AUC: {auc_val:.3f}")
@@ -120,7 +120,7 @@ def draw_precision_recall_curve(
         for pair in zip(naive_results["gene_a"], naive_results["gene_b"])
     ]
     y_score = (
-        -naive_results["inv_cov"] if ixn_type == "ME" else naive_results["inv_cov"]
+        -naive_results["inv_cov"] if ixn_type == "CO" else naive_results["inv_cov"]
     )
     auc_val = average_precision_score(y_true, y_score)
     precision, recall, _ = precision_recall_curve(y_true, y_score)
@@ -128,9 +128,8 @@ def draw_precision_recall_curve(
 
     plt.xlabel("Recall")
     plt.ylabel("Precision")
-    plt.title("Precision-Recall Curve")
     plt.legend()
-    plt.savefig(out_fn)
+    plt.savefig(out_fn, transparent=True)
     plt.close()
 
 
@@ -138,7 +137,7 @@ def draw_recall_at_k_curve(
     simulation_info_fn: Path,
     results_fn: Path,
     out_fn: Path,
-    ixn_type: str = "ME",
+    ixn_type: str,
     max_k: int = 100,
 ) -> None:
     """TODO: Add docstring."""
@@ -184,7 +183,7 @@ def draw_recall_at_k_curve(
         )
         recalls_at_k = _get_recalls_at_k(
             true_ixns=true_ixns,
-            ranked_ixns=betas.sort_values(by="beta", ascending=ixn_type != "ME"),
+            ranked_ixns=betas.sort_values(by="beta", ascending=ixn_type == "ME"),
             num_positive=len(true_ixns),
             max_k=max_k,
         )
@@ -206,7 +205,7 @@ def draw_recall_at_k_curve(
     )
     recalls_at_k = _get_recalls_at_k(
         true_ixns=true_ixns,
-        ranked_ixns=naive_results.sort_values(by="inv_cov", ascending=ixn_type == "ME"),
+        ranked_ixns=naive_results.sort_values(by="inv_cov", ascending=ixn_type == "CO"),
         num_positive=len(true_ixns),
         max_k=max_k,
     )
@@ -216,5 +215,5 @@ def draw_recall_at_k_curve(
     plt.xlabel("Top K Ranked Interactions")
     plt.ylabel("Recall@K")
     plt.legend()
-    plt.savefig(out_fn)
+    plt.savefig(out_fn, transparent=True)
     plt.close()

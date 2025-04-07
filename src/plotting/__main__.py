@@ -28,22 +28,22 @@ if __name__ == "__main__":
     draw_dialog_objective_optimization_curve(
         results_dir=args.results_dir,
         num_iter=args.num_iter,
-        out_fn=args.out_dir / "optimization_curve.svg",
+        out_fn=args.out_dir / f"{args.ixn_type}_optimization_curve.svg",
     )
     draw_dialog_parameter_convergence_curve(
         results_dir=args.results_dir,
         num_iter=args.num_iter,
-        out_fn=args.out_dir / "convergence_curve.svg",
+        out_fn=args.out_dir / f"{args.ixn_type}_convergence_curve.svg",
     )
     draw_precision_recall_curve(
         simulation_info_fn=args.simulation_info,
         results_fn=args.results_dir / f"iter_{args.best_iter}.npy",
-        out_fn=args.out_dir / "precision_recall_curve.svg",
+        out_fn=args.out_dir / f"{args.ixn_type}_precision_recall_curve.svg",
         ixn_type=args.ixn_type,
     )
     draw_recall_at_k_curve(
         simulation_info_fn=args.simulation_info,
         results_fn=args.results_dir / f"iter_{args.best_iter}.npy",
-        out_fn=args.out_dir / "recall_at_k_curve.svg",
+        out_fn=args.out_dir / f"{args.ixn_type}_recall_at_k_curve.svg",
         ixn_type=args.ixn_type,
     )
